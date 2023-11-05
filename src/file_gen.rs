@@ -1,12 +1,11 @@
+use crate::Args;
+use rand::prelude::ThreadRng;
 use rand::{thread_rng, Rng};
 use std::fs::File;
 use std::io::{BufWriter, Result};
 use std::io::{LineWriter, Write};
-use rand::prelude::ThreadRng;
-use crate::{Args, haversine};
 
-
-pub fn gen_main(args: Args) -> Result<()>{
+pub fn gen_main(args: Args) -> Result<()> {
     if args.count == 0 {
         return Ok(());
     }
@@ -29,7 +28,11 @@ pub fn gen_main(args: Args) -> Result<()>{
 
         lw.write_fmt(format_args!(
             "{{\"x0\": {},\"x1\": {}, \"y0\": {},\"y1\": {}}}{}\n",
-            x0, x1, y0, y1, if i == args.count  { "" } else { "," }
+            x0,
+            x1,
+            y0,
+            y1,
+            if i == args.count { "" } else { "," }
         ))?;
 
         let res = haversine(x0, x1, y0, y1);
@@ -43,11 +46,22 @@ pub fn gen_main(args: Args) -> Result<()>{
     Ok(())
 }
 
-
 fn gen_vals(random: &mut ThreadRng) -> (f64, f64, f64, f64) {
     let x0 = random.gen_range(-180.0..=180.0);
     let x1 = random.gen_range(-180.0..=180.0);
     let y0 = random.gen_range(-90.0..=90.0);
     let y1 = random.gen_range(-90.0..=90.0);
     (x0, x1, y0, y1)
+}
+
+fn haversine(x0: f64, x1: f64, y0: f64, y1: f64) -> f64 {
+    let d_lat = f64::to_degrees(y1 - y0);
+    let d_lon = f64::to_degrees(x1 - x0);
+    let lat1 = f64::to_degrees(y0);
+    let lat2 = f64::to_degrees(y1);
+
+    let a = ((d_lat / 2.0f64).sin().powi(2))
+        + lat1.cos() * lat2.cos() * ((d_lon / 2.0f64).sin().powi(2));
+    let c = 2.0f64 * (a.sqrt().asin());
+    6372.8f64 * c
 }
