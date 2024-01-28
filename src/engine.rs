@@ -16,6 +16,7 @@ struct JsonParser {
     idx: usize,
 }
 
+#[time_macro::time_fn]
 pub fn engine_main(args: Args) -> Result<()> {
     let json_name = format!("{}.json", args.file_name);
     let bin_name = format!("{}.bin", args.file_name);
