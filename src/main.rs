@@ -6,14 +6,14 @@ use file_gen::gen_main;
 use std::io::Result;
 
 fn main() -> Result<()> {
-        let args = Args::parse();
-        let result = if args.name == "gen" {
-            gen_main(args)
-        } else {
-            engine_main(args)
-        };
-    
-        result
+    let args = Args::parse();
+    let result = if args.name == "gen" {
+        gen_main(args)
+    } else {
+        engine_main(args)
+    };
+
+    result
 }
 
 /// Simple program to greet a person
