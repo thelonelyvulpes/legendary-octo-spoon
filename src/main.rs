@@ -25,3 +25,9 @@ pub struct Args {
     #[arg(short, long, default_value = "test")]
     file_name: String,
 }
+
+pub struct ProfRecord {
+    values: Vec<(u32, u64)>,
+}
+
+pub static mut PROFILE_RECORDS: ProfRecord = ProfRecord { values: Vec::new() };

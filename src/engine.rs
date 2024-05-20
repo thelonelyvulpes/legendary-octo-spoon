@@ -16,11 +16,10 @@ struct JsonParser {
     idx: usize,
 }
 
-#[time_macro::time_fn]
+#[time_macro::time_fn(id = 0)]
 pub fn engine_main(args: Args) -> Result<()> {
     let json_name = format!("{}.json", args.file_name);
     let bin_name = format!("{}.bin", args.file_name);
-    let start = std::time::Instant::now();
     let results_file = File::open(bin_name)?;
     let mut buf_reader = std::io::BufReader::new(results_file);
     let mut expected_results = Vec::with_capacity(args.count as usize);
@@ -32,22 +31,13 @@ pub fn engine_main(args: Args) -> Result<()> {
         let val = f64::from_le_bytes(buffer);
         expected_results.push(val);
     }
-    println!("read res time: {:?}", start.elapsed());
-    let start = std::time::Instant::now();
     let mut file = File::open(json_name)?;
     let mut data = Vec::with_capacity(1024 * 1024 * 128);
     file.read_to_end(&mut data)?;
-    println!("read json time: {:?}", start.elapsed());
-    let start = std::time::Instant::now();
     let mut parser = JsonParser { data, idx: 0 };
     let val = parser.parse_data()?;
-    println!("parse to IL time: {:?}", start.elapsed());
-    let start = std::time::Instant::now();
     let results = parse_pairs_from_json(val)?;
-    println!("parse to pairs time: {:?}", start.elapsed());
-    let start = std::time::Instant::now();
     calculate_haversine_for_pairs(&results, &expected_results);
-    println!("calc time: {:?}", start.elapsed());
     Ok(())
 }
 
