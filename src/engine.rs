@@ -235,7 +235,7 @@ impl MapThing for Vec<(String, JsonValue)> {
         Err(Error::new(ErrorKind::NotFound, "no key"))
     }
 }
-#[time_fn]
+
 fn haversine(x0: f64, x1: f64, y0: f64, y1: f64) -> f64 {
     let d_lat = f64::to_degrees(y1 - y0);
     let d_lon = f64::to_degrees(x1 - x0);

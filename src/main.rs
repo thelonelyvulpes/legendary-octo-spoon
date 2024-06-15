@@ -4,18 +4,23 @@ mod file_gen;
 use clap::Parser;
 use engine::engine_main;
 use file_gen::gen_main;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{HashMap};
 use std::io::Result;
+use std::time::Instant;
 
 fn main() -> Result<()> {
     let args = Args::parse();
+    let start_wallclock = Instant::now();
     let result = if args.name == "gen" {
         gen_main(args)
     } else {
         engine_main(args)
     };
+    let end_wallclock = Instant::now();
 
-    let mut m: BTreeMap<&'static str, (u64, u64, usize)> = BTreeMap::new();
+    println!("wall: {}ms", end_wallclock.duration_since(start_wallclock).as_millis());
+
+    let mut m: HashMap<&'static str, (u64, u64, usize)> = HashMap::new();
     unsafe {
         read_into(&mut m, 0, PROFILE_RECORDS.values.len(), 0);
     }
@@ -33,10 +38,10 @@ fn main() -> Result<()> {
 }
 
 unsafe fn read_into(
-    map: &mut BTreeMap<&'static str, (u64, u64, usize)>,
+    map: &mut HashMap<&'static str, (u64, u64, usize)>,
     i: usize,
     k: usize,
-    depth: usize,
+    depth: usize
 ) -> usize {
     let mut index = i;
     loop {
