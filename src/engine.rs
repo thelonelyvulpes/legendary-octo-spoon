@@ -1,6 +1,7 @@
 use crate::Args;
 use std::fs::File;
 use std::io::{Error, ErrorKind, Read, Result};
+use time_macro::time_fn;
 
 pub enum JsonValue {
     Object { kvp: Vec<(String, JsonValue)> },
@@ -16,7 +17,7 @@ struct JsonParser {
     idx: usize,
 }
 
-#[time_macro::time_fn(id = 0)]
+#[time_fn]
 pub fn engine_main(args: Args) -> Result<()> {
     let json_name = format!("{}.json", args.file_name);
     let bin_name = format!("{}.bin", args.file_name);
@@ -33,11 +34,18 @@ pub fn engine_main(args: Args) -> Result<()> {
     }
     let mut file = File::open(json_name)?;
     let mut data = Vec::with_capacity(1024 * 1024 * 128);
-    file.read_to_end(&mut data)?;
+
+    read_file(&mut file, &mut data)?;
     let mut parser = JsonParser { data, idx: 0 };
     let val = parser.parse_data()?;
     let results = parse_pairs_from_json(val)?;
     calculate_haversine_for_pairs(&results, &expected_results);
+    Ok(())
+}
+
+#[time_fn]
+pub fn read_file(file: &mut File, mut data: &mut Vec<u8>) -> Result<()> {
+    let _ = file.read_to_end(&mut data)?;
     Ok(())
 }
 
@@ -143,6 +151,7 @@ impl JsonParser {
     }
 }
 
+#[time_fn]
 fn parse_pairs_from_json(val: JsonValue) -> Result<Vec<Pairs>> {
     match val {
         JsonValue::Object { kvp: key_val_pairs } => {
@@ -153,15 +162,19 @@ fn parse_pairs_from_json(val: JsonValue) -> Result<Vec<Pairs>> {
                     for element in elements {
                         results.push(construct(element)?);
                     }
-                    return Ok(results);
+                    Ok(results)
+                } else {
+                    Err(Error::new(ErrorKind::InvalidData, "No key pairs"))
                 }
+            } else {
+                Err(Error::new(ErrorKind::InvalidData, "No key pairs"))
             }
-            Err(Error::new(ErrorKind::InvalidData, "No key pairs"))
         }
         _ => Err(Error::new(ErrorKind::InvalidData, "unexpected.")),
     }
 }
 
+#[time_fn]
 fn calculate_haversine_for_pairs(results: &Vec<Pairs>, x: &Vec<f64>) {
     let len = results.len();
     if x.len() != len {
@@ -218,10 +231,11 @@ impl MapThing for Vec<(String, JsonValue)> {
                 }
             }
         }
+
         Err(Error::new(ErrorKind::NotFound, "no key"))
     }
 }
-
+#[time_fn]
 fn haversine(x0: f64, x1: f64, y0: f64, y1: f64) -> f64 {
     let d_lat = f64::to_degrees(y1 - y0);
     let d_lon = f64::to_degrees(x1 - x0);
