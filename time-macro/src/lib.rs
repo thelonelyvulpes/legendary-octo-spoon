@@ -1,32 +1,46 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, ItemFn};
+use syn::{parse_macro_input, Expr, ItemFn};
 
 #[proc_macro_attribute]
-pub fn time_fn(_: TokenStream, item: TokenStream) -> TokenStream {
+pub fn time_fn(data_expr: TokenStream, item: TokenStream) -> TokenStream {
     let ItemFn {
         attrs,
         vis,
         sig,
         block,
     } = parse_macro_input!(item as ItemFn);
-
     let v = sig.ident.to_string();
-
-    let start = quote!(__measure_time_start_instant);
-    let end = quote!(__measure_time_start_instant);
-
-    let expanded = quote! {
-        #(#attrs)*
-        #vis #sig {
-            unsafe {
-                use crate::{PROFILE_RECORDS, ProfPoint};
-                let #start = core::arch::x86_64::_rdtsc();
-                PROFILE_RECORDS.values.push(ProfPoint::Open(#start, #v));
-                let ret = #block;
-                let #end = core::arch::x86_64::_rdtsc();
-                PROFILE_RECORDS.values.push(ProfPoint::Close(#end));
-                ret
+    let expanded = if data_expr.is_empty() {
+        quote! {
+            #(#attrs)*
+            #vis #sig {
+                unsafe {
+                    let __measure_time_start_instant = core::arch::x86_64::_rdtsc();
+                    let ret = #block;
+                    let __measure_time_end_instant = core::arch::x86_64::_rdtsc();
+                    use crate::{PROFILE_RECORDS, ProfPoint};
+                    PROFILE_RECORDS.values.push(ProfPoint::Open(__measure_time_start_instant, #v));
+                    PROFILE_RECORDS.values.push(ProfPoint::Close(__measure_time_end_instant));
+                    ret
+                }
+            }
+        }
+    } else {
+        let data = parse_macro_input!(data_expr as Expr);
+        quote! {
+            #(#attrs)*
+            #vis #sig {
+                unsafe {
+                    let __measure_time_start_instant = core::arch::x86_64::_rdtsc();
+                    let result = #block;
+                    let __measure_time_end_instant = core::arch::x86_64::_rdtsc();
+                    use crate::{PROFILE_RECORDS, ProfPoint};
+                    PROFILE_RECORDS.values.push(ProfPoint::Open(__measure_time_start_instant, #v));
+                    PROFILE_RECORDS.values.push(ProfPoint::Data(#data));
+                    PROFILE_RECORDS.values.push(ProfPoint::Close(__measure_time_end_instant));
+                    result
+                }
             }
         }
     };

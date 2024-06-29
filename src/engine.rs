@@ -1,4 +1,4 @@
-use crate::Args;
+use crate::{Args, PROFILE_RECORDS};
 use std::fs::File;
 use std::io::{Error, ErrorKind, Read, Result};
 use time_macro::time_fn;
@@ -20,21 +20,10 @@ struct JsonParser {
 #[time_fn]
 pub fn engine_main(args: Args) -> Result<()> {
     let json_name = format!("{}.json", args.file_name);
-    let bin_name = format!("{}.bin", args.file_name);
-    let results_file = File::open(bin_name)?;
-    let mut buf_reader = std::io::BufReader::new(results_file);
-    let mut expected_results = Vec::with_capacity(args.count as usize);
-    let mut buffer = [0u8; 8];
-    loop {
-        if buf_reader.read_exact(&mut buffer).is_err() {
-            break;
-        }
-        let val = f64::from_le_bytes(buffer);
-        expected_results.push(val);
-    }
+    let expected_results = read_expected_result_file(args)?;
+
     let mut file = File::open(json_name)?;
     let mut data = Vec::with_capacity(1024 * 1024 * 128);
-
     read_file(&mut file, &mut data)?;
     let mut parser = JsonParser { data, idx: 0 };
     let val = parser.parse_data()?;
@@ -43,7 +32,24 @@ pub fn engine_main(args: Args) -> Result<()> {
     Ok(())
 }
 
-#[time_fn]
+#[time_fn(result.as_ref().unwrap().len() as u64 * 8u64)]
+fn read_expected_result_file(args: Args) -> Result<Vec<f64>> {
+    let mut expected_results = Vec::with_capacity(args.count as usize);
+    let bin_name = format!("{}.bin", args.file_name);
+    let results_file = File::open(bin_name)?;
+    let mut buf_reader = std::io::BufReader::new(results_file);
+    let mut buffer = [0u8; 8];
+    loop {
+        if buf_reader.read_exact(&mut buffer).is_err() {
+            break;
+        }
+        let val = f64::from_le_bytes(buffer);
+        expected_results.push(val);
+    }
+    Ok(expected_results)
+}
+
+#[time_fn(data.len() as u64)]
 pub fn read_file(file: &mut File, mut data: &mut Vec<u8>) -> Result<()> {
     let _ = file.read_to_end(&mut data)?;
     Ok(())
