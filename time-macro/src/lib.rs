@@ -2,7 +2,6 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Expr, ItemFn};
 
-
 #[proc_macro_attribute]
 pub fn time_fn(data_expr: TokenStream, item: TokenStream) -> TokenStream {
     let ItemFn {
@@ -18,7 +17,7 @@ pub fn time_fn(data_expr: TokenStream, item: TokenStream) -> TokenStream {
             #vis #sig #block
         };
 
-        return TokenStream::from(original)
+        return TokenStream::from(original);
     };
     let v = sig.ident.to_string();
     let expanded = if data_expr.is_empty() {

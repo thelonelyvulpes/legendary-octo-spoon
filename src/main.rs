@@ -5,10 +5,9 @@ use clap::Parser;
 use engine::engine_main;
 use file_gen::gen_main;
 use std::io::Result;
-use std::time::{Instant};
+use std::time::Instant;
 
 fn main() -> Result<()> {
-
     let args = Args::parse();
     let start_wall_clock = Instant::now();
     let result = if args.name == "gen" {
@@ -22,9 +21,7 @@ fn main() -> Result<()> {
         "wall: {}ms",
         end_wall_clock.duration_since(start_wall_clock).as_millis()
     );
-    unsafe {
-        println!("clock: {:.2}mhz", cpu_estimate(100) as f64 / 1_000_000f64)
-    }
+    unsafe { println!("clock: {:.2}mhz", cpu_estimate(100) as f64 / 1_000_000f64) }
 
     result
 }
@@ -33,7 +30,7 @@ fn main() -> Result<()> {
 ///  * `ms_to_wait` - millis to wait to estimate cpu clock.
 unsafe fn cpu_estimate(ms_to_wait: u64) -> u64 {
     if cfg!(target_os = "linux") {
-        use nix::sys::time::{TimeValLike};
+        use nix::sys::time::TimeValLike;
         let os_freq = 1_000_000_000u64; // can be calculated with nix::time::clock_getres
         let ms_per_ns = 1_000_000u64; // can be calculated with nix::time::clock_getres
 
@@ -47,7 +44,7 @@ unsafe fn cpu_estimate(ms_to_wait: u64) -> u64 {
             elapsed_os = (cur - start).num_nanoseconds();
         }
         let post = core::arch::x86_64::_rdtsc();
-        let elapsed_clock = post-pre;
+        let elapsed_clock = post - pre;
 
         elapsed_clock * os_freq / elapsed_os as u64
     } else {
@@ -64,7 +61,6 @@ pub struct Args {
     #[arg(short, long, default_value = "test")]
     file_name: String,
 }
-
 
 // move to time-macro?
 pub struct ProfRecord {

@@ -1,4 +1,4 @@
-use crate::{Args};
+use crate::Args;
 use std::fs::File;
 use std::io::{Error, ErrorKind, Read, Result};
 use time_macro::time_fn;
