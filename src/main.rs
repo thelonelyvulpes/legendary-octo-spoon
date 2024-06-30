@@ -5,7 +5,7 @@ use clap::Parser;
 use engine::engine_main;
 use file_gen::gen_main;
 use std::io::Result;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 fn main() -> Result<()> {
     let args = Args::parse();
@@ -29,27 +29,14 @@ fn main() -> Result<()> {
 /// returns cpu clock estimate in hz.
 ///  * `ms_to_wait` - millis to wait to estimate cpu clock.
 unsafe fn cpu_estimate(ms_to_wait: u64) -> u64 {
-    if cfg!(target_os = "linux") {
-        use nix::sys::time::TimeValLike;
-        let os_freq = 1_000_000_000u64; // can be calculated with nix::time::clock_getres
-        let ms_per_ns = 1_000_000u64; // can be calculated with nix::time::clock_getres
+    let pre = core::arch::x86_64::_rdtsc();
+    let dur = Duration::from_millis(ms_to_wait);
+    let start = Instant::now();
+    while Instant::now().duration_since(start) < dur {}
+    let post = core::arch::x86_64::_rdtsc();
+    let elapsed_clock = post - pre;
 
-        let measure_time = ms_to_wait as i64 * ms_per_ns as i64;
-        let mut elapsed_os = 0i64;
-
-        let pre = core::arch::x86_64::_rdtsc();
-        let start = nix::time::clock_gettime(nix::time::ClockId::CLOCK_MONOTONIC).unwrap();
-        while elapsed_os < measure_time {
-            let cur = nix::time::clock_gettime(nix::time::ClockId::CLOCK_MONOTONIC).unwrap();
-            elapsed_os = (cur - start).num_nanoseconds();
-        }
-        let post = core::arch::x86_64::_rdtsc();
-        let elapsed_clock = post - pre;
-
-        elapsed_clock * os_freq / elapsed_os as u64
-    } else {
-        panic!("not implemented for other OSes")
-    }
+    (1000u64 / ms_to_wait) * elapsed_clock
 }
 
 /// Simple program to greet a person
