@@ -29,8 +29,8 @@ fn main() -> Result<()> {
 /// returns cpu clock estimate in hz.
 ///  * `ms_to_wait` - millis to wait to estimate cpu clock.
 unsafe fn cpu_estimate(ms_to_wait: u64) -> u64 {
-    let pre = core::arch::x86_64::_rdtsc();
     let dur = Duration::from_millis(ms_to_wait);
+    let pre = core::arch::x86_64::_rdtsc();
     let start = Instant::now();
     while Instant::now().duration_since(start) < dur {}
     let post = core::arch::x86_64::_rdtsc();
